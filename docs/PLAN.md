@@ -328,7 +328,7 @@ Kubernetes — **minikube как мини-витрина в самом конц�
 F:\GitHubRepos\ML-SIEM\
   data/            raw/ processed/
   notebooks/       исследование, EDA
-  src/
+  src/mlsiem/      python-пакет (src-layout, ставится `pip install -e .`)
     ingestion/     kafka producer/consumer, replay
     features/      preprocessing, windowing
     models/        flow_cnn_lstm/ temporal/ payload/ autoencoder/ meta/

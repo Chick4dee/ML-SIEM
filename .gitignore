@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+
+# Данные и артефакты моделей (версионируются через DVC, не git)
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+*.pt
+*.pth
+*.onnx
+
+# MLflow / DVC
+mlruns/
+mlartifacts/
+/.dvc/cache
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Frontend
+node_modules/
+ui/dist/
+
+# IDE / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# Логи и захваты трафика
+*.log
+*.pcap
+*.pcapng
