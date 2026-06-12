@@ -16,6 +16,10 @@ CTU13_TIMEZONE = "Europe/Prague"
 
 _PROTO_NUMBERS = {"tcp": 6, "udp": 17, "icmp": 1, "igmp": 2}
 
+# Протоколы, у которых порты — настоящие (для остальных, как ICMP, nfstream
+# пишет нули, а Argus — hex-код типа/кода: сравнивать порты бессмысленно)
+_PORTED_PROTOCOLS = (6, 17)
+
 _GT_COLS = ["gt_start_ms", "gt_end_ms", "src_ip", "src_port", "dst_ip", "dst_port",
             "protocol", "label", "label_class"]
 
@@ -90,20 +94,54 @@ def label_flows(
     потоки по active_timeout на сегменты, чьи старты на десятки минут позже
     начала GT-записи (DDoS-флуды CTU-13 — именно такой случай).
 
+    Протоколы без портов (ICMP и т.п.) матчатся по 3-tuple (ip, ip, protocol):
+    у nfstream их порты нулевые, у Argus в портах закодирован тип/код ICMP —
+    сравнение портов дало бы гарантированный промах.
+
     Потоки без пары получают label/label_class = null — решение об их судьбе
     принимает следующий шаг (для бенчмарка обычно отбрасываются, чтобы не
     учить на шуме).
     """
-    keys = ["src_ip", "src_port", "dst_ip", "dst_port", "protocol"]
     gt_fwd = gt.select(_GT_COLS)
     gt_rev = gt_fwd.rename({"src_ip": "dst_ip", "dst_ip": "src_ip",
                             "src_port": "dst_port", "dst_port": "src_port"})
     gt_both = pl.concat([gt_fwd, gt_rev.select(_GT_COLS)])
 
+    ported = pl.col("protocol").is_in(_PORTED_PROTOCOLS)
     indexed = flows.with_row_index("_flow_idx")
-    matched = (
-        indexed.select(["_flow_idx", "bidirectional_first_seen_ms", *keys])
-        .join(gt_both, on=keys, how="inner")
+    flow_cols = ["_flow_idx", "bidirectional_first_seen_ms",
+                 "src_ip", "src_port", "dst_ip", "dst_port", "protocol"]
+    matched = pl.concat([
+        _nearest_match(
+            indexed.filter(ported).select(flow_cols),
+            gt_both.filter(ported),
+            ["src_ip", "src_port", "dst_ip", "dst_port", "protocol"],
+            tolerance_ms,
+        ),
+        _nearest_match(
+            indexed.filter(~ported).select(flow_cols),
+            gt_both.filter(~ported),
+            ["src_ip", "dst_ip", "protocol"],
+            tolerance_ms,
+        ),
+    ])
+    return (
+        indexed.join(matched, on="_flow_idx", how="left")
+        .drop("_flow_idx")
+    )
+
+
+def _nearest_match(
+    flows_keyed: pl.DataFrame,
+    gt_keyed: pl.DataFrame,
+    keys: list[str],
+    tolerance_ms: int,
+) -> pl.DataFrame:
+    """Ближайшая по времени GT-запись на каждый поток при совпадении keys."""
+    return (
+        flows_keyed.join(gt_keyed.select([*keys, "gt_start_ms", "gt_end_ms",
+                                          "label", "label_class"]),
+                         on=keys, how="inner")
         .with_columns(
             pl.max_horizontal(
                 pl.col("gt_start_ms") - pl.col("bidirectional_first_seen_ms"),
@@ -115,8 +153,4 @@ def label_flows(
         .sort("_dt_ms")
         .unique(subset="_flow_idx", keep="first")
         .select(["_flow_idx", "label", "label_class"])
-    )
-    return (
-        indexed.join(matched, on="_flow_idx", how="left")
-        .drop("_flow_idx")
     )

@@ -98,6 +98,33 @@ def test_label_flows_matches_flood_segment_inside_gt_interval():
     assert out["label_class"][0] == "botnet"
 
 
+def test_label_flows_matches_icmp_by_3tuple_ignoring_ports():
+    # nfstream: порты ICMP = 0; Argus: в портах hex-код типа (0x0008) —
+    # по 5-tuple такие потоки не сматчатся никогда, нужен 3-tuple
+    gt = pl.DataFrame(
+        {
+            "gt_start_ms": [1000],
+            "gt_end_ms": [2000],
+            "src_ip": ["10.0.0.1"],
+            "src_port": [8],  # из 0x0008
+            "dst_ip": ["10.0.0.2"],
+            "dst_port": [0],
+            "protocol": [1],
+            "label": ["icmp-ping"],
+            "label_class": ["botnet"],
+        }
+    )
+    flows = _flows(
+        [
+            (1500, "10.0.0.1", 0, "10.0.0.2", 0, 1),   # ICMP: матч по 3-tuple
+            (1500, "10.0.0.1", 0, "10.0.0.2", 0, 6),   # TCP с теми же IP: порты
+                                                        # обязаны совпадать — мимо
+        ]
+    )
+    out = label_flows(flows, gt)
+    assert out["label_class"].to_list() == ["botnet", None]
+
+
 def test_label_flows_respects_tolerance():
     gt = pl.DataFrame(
         {
