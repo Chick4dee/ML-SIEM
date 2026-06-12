@@ -15,6 +15,14 @@ dev = [
     "pytest>=8.0",
     "ruff>=0.6",
 ]
+# torch ставится отдельно под CUDA: pip install torch --index-url https://download.pytorch.org/whl/cu126
+ml = [
+    "numpy",
+]
+# требует установленный Npcap (WinPcap API-compatible mode) на Windows
+capture = [
+    "nfstream>=6.6",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
