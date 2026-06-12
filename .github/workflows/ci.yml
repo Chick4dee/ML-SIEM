@@ -17,7 +17,7 @@ jobs:
           cache: pip
 
       - name: Install package + dev tools
-        run: pip install -e .[dev]
+        run: pip install -e .[dev,capture]
 
       - name: Ruff
         run: ruff check .

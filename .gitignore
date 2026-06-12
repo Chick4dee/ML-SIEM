@@ -39,3 +39,4 @@ desktop.ini
 *.log
 *.pcap
 *.pcapng
+!tests/fixtures/*.pcap
