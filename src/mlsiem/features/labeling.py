@@ -16,8 +16,8 @@ CTU13_TIMEZONE = "Europe/Prague"
 
 _PROTO_NUMBERS = {"tcp": 6, "udp": 17, "icmp": 1, "igmp": 2}
 
-_GT_COLS = ["gt_start_ms", "src_ip", "src_port", "dst_ip", "dst_port", "protocol",
-            "label", "label_class"]
+_GT_COLS = ["gt_start_ms", "gt_end_ms", "src_ip", "src_port", "dst_ip", "dst_port",
+            "protocol", "label", "label_class"]
 
 
 def _parse_port(col: str) -> pl.Expr:
@@ -44,9 +44,9 @@ def _label_class() -> pl.Expr:
 def load_binetflow(path, *, timezone: str = CTU13_TIMEZONE) -> pl.DataFrame:
     """Читает .binetflow (Argus CSV из CTU-13) в нормализованный вид.
 
-    Возвращает колонки: gt_start_ms (UTC epoch ms), src_ip, src_port, dst_ip,
-    dst_port, protocol (номер IANA), label (сырая строка), label_class
-    (botnet / normal / background).
+    Возвращает колонки: gt_start_ms / gt_end_ms (UTC epoch ms; конец = старт +
+    Dur), src_ip, src_port, dst_ip, dst_port, protocol (номер IANA), label
+    (сырая строка), label_class (botnet / normal / background).
     """
     return (
         pl.scan_csv(path, schema_overrides={"Sport": pl.String, "Dport": pl.String})
@@ -64,6 +64,10 @@ def load_binetflow(path, *, timezone: str = CTU13_TIMEZONE) -> pl.DataFrame:
             _parse_port("Dport"),
             _label_class(),
         )
+        .with_columns(
+            (pl.col("gt_start_ms") + (pl.col("Dur") * 1000).cast(pl.Int64))
+            .alias("gt_end_ms")
+        )
         .rename({"SrcAddr": "src_ip", "DstAddr": "dst_ip",
                  "Sport": "src_port", "Dport": "dst_port", "Label": "label"})
         .select(_GT_COLS)
@@ -79,10 +83,16 @@ def label_flows(
 ) -> pl.DataFrame:
     """Переносит метки gt на nfstream-потоки.
 
-    Матч: одинаковый 5-tuple (в любой из двух ориентаций) и минимальная
-    |Δt стартов| в пределах tolerance_ms. Потоки без пары получают
-    label/label_class = null — решение об их судьбе принимает следующий шаг
-    (для бенчмарка обычно отбрасываются, чтобы не учить на шуме).
+    Матч: одинаковый 5-tuple (в любой из двух ориентаций) и старт потока,
+    ближайший к ИНТЕРВАЛУ [gt_start, gt_end] GT-записи (расстояние 0, если
+    старт внутри интервала; иначе — до ближайшей границы, не более
+    tolerance_ms). Интервал, а не старт-к-старту: nfstream режет длинные
+    потоки по active_timeout на сегменты, чьи старты на десятки минут позже
+    начала GT-записи (DDoS-флуды CTU-13 — именно такой случай).
+
+    Потоки без пары получают label/label_class = null — решение об их судьбе
+    принимает следующий шаг (для бенчмарка обычно отбрасываются, чтобы не
+    учить на шуме).
     """
     keys = ["src_ip", "src_port", "dst_ip", "dst_port", "protocol"]
     gt_fwd = gt.select(_GT_COLS)
@@ -95,8 +105,11 @@ def label_flows(
         indexed.select(["_flow_idx", "bidirectional_first_seen_ms", *keys])
         .join(gt_both, on=keys, how="inner")
         .with_columns(
-            (pl.col("bidirectional_first_seen_ms") - pl.col("gt_start_ms"))
-            .abs().alias("_dt_ms")
+            pl.max_horizontal(
+                pl.col("gt_start_ms") - pl.col("bidirectional_first_seen_ms"),
+                pl.col("bidirectional_first_seen_ms") - pl.col("gt_end_ms"),
+                pl.lit(0, dtype=pl.Int64),
+            ).alias("_dt_ms")
         )
         .filter(pl.col("_dt_ms") <= tolerance_ms)
         .sort("_dt_ms")

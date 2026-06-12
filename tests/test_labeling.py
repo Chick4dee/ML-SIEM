@@ -30,6 +30,7 @@ def test_load_binetflow_converts_prague_time_to_utc(tmp_path):
 
     expected = dt.datetime(2011, 8, 10, 9, 4, 24, tzinfo=dt.UTC).timestamp() * 1000
     assert gt["gt_start_ms"][0] == int(expected)
+    assert gt["gt_end_ms"][0] == int(expected) + 1000  # Dur = 1.0 c
     assert gt["protocol"][0] == 6
     assert gt["label_class"][0] == "botnet"
 
@@ -53,6 +54,7 @@ def test_label_flows_matches_both_orientations_and_nearest_time():
     gt = pl.DataFrame(
         {
             "gt_start_ms": [1000, 5000, 100_000],
+            "gt_end_ms": [2000, 6000, 101_000],
             "src_ip": ["10.0.0.1", "10.0.0.1", "10.0.0.9"],
             "src_port": [1111, 1111, 9999],
             "dst_ip": ["10.0.0.2", "10.0.0.2", "10.0.0.8"],
@@ -75,10 +77,32 @@ def test_label_flows_matches_both_orientations_and_nearest_time():
     assert out["label_class"].to_list() == ["background", "botnet", None]
 
 
+def test_label_flows_matches_flood_segment_inside_gt_interval():
+    # длинная GT-запись (час флуда): сегмент nfstream стартует в середине —
+    # старт-к-старту дал бы Δ=30 мин >> допуска, интервальный матч обязан найти
+    gt = pl.DataFrame(
+        {
+            "gt_start_ms": [0],
+            "gt_end_ms": [3_600_000],
+            "src_ip": ["10.0.0.1"],
+            "src_port": [1],
+            "dst_ip": ["10.0.0.2"],
+            "dst_port": [2],
+            "protocol": [17],
+            "label": ["flood"],
+            "label_class": ["botnet"],
+        }
+    )
+    flows = _flows([(1_800_000, "10.0.0.1", 1, "10.0.0.2", 2, 17)])
+    out = label_flows(flows, gt, tolerance_ms=60_000)
+    assert out["label_class"][0] == "botnet"
+
+
 def test_label_flows_respects_tolerance():
     gt = pl.DataFrame(
         {
             "gt_start_ms": [0],
+            "gt_end_ms": [1000],
             "src_ip": ["10.0.0.1"],
             "src_port": [1],
             "dst_ip": ["10.0.0.2"],
@@ -100,6 +124,7 @@ def test_label_flows_keeps_flow_count_and_columns():
     gt = pl.DataFrame(
         {
             "gt_start_ms": [0],
+            "gt_end_ms": [1000],
             "src_ip": ["10.0.0.1"],
             "src_port": [1],
             "dst_ip": ["10.0.0.2"],
