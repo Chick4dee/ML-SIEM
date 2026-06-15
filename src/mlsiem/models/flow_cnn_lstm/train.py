@@ -45,7 +45,8 @@ def _evaluate(model, loader, n_classes, device) -> tuple[float, list[float]]:
 
 def train(args) -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    data = build_datasets(args.data, window=args.window, val_frac=args.val_frac)
+    data = build_datasets(args.data, window=args.window, val_frac=args.val_frac,
+                          label_col=args.label_col)
     n_cat = len(data.cat_positions)
     n_numeric = len(data.feature_names) - n_cat
     cfg = FlowModelConfig(
@@ -136,6 +137,8 @@ def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--data", required=True, help="glob по parquet")
     p.add_argument("--out", default="mlartifacts/flow_cnn_lstm")
+    p.add_argument("--label-col", default="canonical",
+                   help="колонка меток (UNSW: canonical; CTU-13: label_class)")
     p.add_argument("--epochs", type=int, default=20)
     p.add_argument("--batch", type=int, default=256)
     p.add_argument("--window", type=int, default=16)

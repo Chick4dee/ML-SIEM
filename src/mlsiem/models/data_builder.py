@@ -44,6 +44,8 @@ def build_datasets(
     if not files:
         raise FileNotFoundError(f"нет parquet по шаблону: {parquet_glob}")
     raw = pl.concat([pl.read_parquet(f) for f in files])
+    # потоки без метки (unmatched при разметке) не учим — не превращаем в шум
+    raw = raw.filter(pl.col(label_col).is_not_null())
 
     train_raw, val_raw = time_split(raw, val_frac=val_frac)
     pre = FeaturePreprocessor.fit(train_raw)
