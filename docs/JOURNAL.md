@@ -427,3 +427,14 @@ TLS на полигоне). Char-level должен обобщаться луч�
 **Итог:** 3 рабочих эксперта (Flow + AE + Payload). Следующий логичный шаг —
 фаза 7 (stacking-мета вместо наивного OR, чтобы учесть разную надёжность
 экспертов по классам).
+
+## 2026-06-15 — Графики обучения (для отчёта)
+
+Все прогоны логировались в MLflow (локально, в git не идёт). Для отчёта выгружены
+статические PNG: `mlops/plot_runs.py` строит кривые из истории MLflow в
+`docs/figures/` (регенерируются командой `python -m mlsiem.mlops.plot_runs`):
+- `flow_training.png` — Э1: loss + val PR-AUC по эпохам
+- `flow_per_class.png` — Э1: per-class PR-AUC (виден потолок flow: benign 1.0 →
+  worms 0.01)
+- `ae_training.png` — Э4: сходимость recon (train/val benign)
+- `payload_training.png` — Э3: PR-AUC/recall/precision по эпохам

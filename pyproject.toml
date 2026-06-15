@@ -28,6 +28,7 @@ ml = [
     "torchmetrics",
     "mlflow",
     "scikit-learn",
+    "matplotlib",
 ]
 # требует установленный Npcap (WinPcap API-compatible mode) на Windows
 capture = [
