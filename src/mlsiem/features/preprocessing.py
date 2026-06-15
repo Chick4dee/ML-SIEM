@@ -38,7 +38,12 @@ EXCLUDED = frozenset({
 CATEGORICAL = ("application_name", "application_category_name")
 
 _TIME_COL = "bidirectional_first_seen_ms"
-_STD_FLOOR = 1e-6
+# Порог std: ниже него фича считается константной (её z-вклад зануляем, а не
+# делим на ~0 — иначе мелкое отклонение на serve даёт астрономический z-score).
+_STD_FLOOR = 1e-2
+# Клип нормализованных значений: ограничивает тяжёлые хвосты и выбросы serve,
+# чтобы они не дестабилизировали обучение/реконструкцию.
+_CLIP = 10.0
 
 
 def select_feature_columns(df: pl.DataFrame) -> list[str]:
@@ -66,7 +71,9 @@ class FeaturePreprocessor:
             [pl.col(c).cast(pl.Float64).fill_null(0.0).log1p().alias(c) for c in numeric]
         )
         means = [logged[c].mean() for c in numeric]
-        stds = [max(logged[c].std() or 0.0, _STD_FLOOR) for c in numeric]
+        # константные фичи (std < floor) помечаем std=inf → их z-вклад станет 0
+        stds = [(s if (s := logged[c].std() or 0.0) >= _STD_FLOOR else float("inf"))
+                for c in numeric]
         vocabularies = {
             col: df[col].drop_nulls().unique().sort().to_list()
             for col in CATEGORICAL if col in df.columns
@@ -80,7 +87,10 @@ class FeaturePreprocessor:
         num = df.select(
             [pl.col(c).cast(pl.Float64).fill_null(0.0).log1p().alias(c) for c in self.numeric]
         ).to_numpy()
+        # std=inf для констант → вклад 0; клип хвостов; страховка от non-finite
         num = (num - self.means) / self.stds
+        num = np.clip(np.nan_to_num(num, nan=0.0, posinf=_CLIP, neginf=-_CLIP),
+                      -_CLIP, _CLIP)
 
         out = pl.from_numpy(num, schema=self.numeric)
 
