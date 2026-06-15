@@ -13,6 +13,7 @@ AE считаем в fp32: под AMP большая ошибка реконст
 """
 
 import argparse
+import json
 from pathlib import Path
 
 import mlflow
@@ -110,6 +111,11 @@ def train(args) -> None:
         pr = average_precision_score(is_attack, errs)
         thr = float(np.quantile(errs[benign_mask], 1 - args.target_fpr))
         actual_fpr = float((errs[benign_mask] > thr).mean())
+        # порог — часть serve-артефакта эксперта (нужен мета-слою)
+        (out_dir / "ae_threshold.json").write_text(
+            json.dumps({"threshold": thr, "target_fpr": args.target_fpr,
+                        "roc_auc": roc, "pr_auc": pr}, ensure_ascii=False),
+            encoding="utf-8")
         mlflow.log_metrics({"anomaly_roc_auc": roc, "anomaly_pr_auc": pr,
                             "threshold": thr, "actual_fpr": actual_fpr})
         print(f"\nАномалия-детекция: ROC-AUC={roc:.3f} PR-AUC={pr:.3f} "
