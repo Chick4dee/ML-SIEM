@@ -16,6 +16,9 @@ jobs:
           python-version: "3.11"
           cache: pip
 
+      - name: Install PyTorch (CPU) for tests
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+
       - name: Install package + dev tools
         run: pip install -e .[dev,capture]
 
