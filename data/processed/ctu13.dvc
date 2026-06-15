@@ -1,0 +1,6 @@
+outs:
+- md5: 6d9c5ca3269d523abd726a164110a8cb.dir
+  size: 15934998
+  nfiles: 14
+  hash: md5
+  path: ctu13

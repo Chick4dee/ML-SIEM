@@ -1,0 +1,6 @@
+[core]
+    remote = localremote
+    autostage = true
+    analytics = false
+['remote "localremote"']
+    url = A:\dvc-remote
