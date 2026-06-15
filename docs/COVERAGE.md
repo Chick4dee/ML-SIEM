@@ -34,7 +34,7 @@
 | backdoor / C&C | **Э2** | Э5, Э1 | 🟡 Э1 слаб (0.11); Э2 ОТЛОЖЕН до полигона |
 | worms | Э3+Э5 | Э4, Э1 | 🟡 Э1 слеп (0.01) → ждём payload/host |
 | analysis | Э1 (recon-like) | Э4 | 🟡 Э1 слаб (0.07); частично пересекается с recon |
-| web (SQLi/XSS/brute) | **Э3** | — | ⬜ Э3 не обучен (фаза 6) |
+| web (SQLi/XSS/brute) | **Э3** | — | ✅ Э3 обучен (CSIC PR-AUC 0.9998; single-app) |
 | host (lateral/persist) | **Э5** | Э2 | ⬜ Э5 не обучен (фаза 20) |
 | zero-day / unknown | **Э4 + open-set** | — | ⬜ фаза 3 (AE) + фаза 7 (open-set) |
 
