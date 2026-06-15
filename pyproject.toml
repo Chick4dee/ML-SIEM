@@ -20,7 +20,15 @@ dev = [
     "pytest>=8.0",
     "ruff>=0.6",
 ]
-# torch ставится отдельно под CUDA: pip install torch --index-url https://download.pytorch.org/whl/cu126
+# ML-стек. На Windows torch ставится отдельно под CUDA:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu126
+# В CI/CPU-окружении достаточно дефолтного PyPI-колеса (CPU).
+ml = [
+    "torch",
+    "torchmetrics",
+    "mlflow",
+    "scikit-learn",
+]
 # требует установленный Npcap (WinPcap API-compatible mode) на Windows
 capture = [
     "nfstream>=6.6",
