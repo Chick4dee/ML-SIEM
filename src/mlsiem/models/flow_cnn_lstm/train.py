@@ -143,7 +143,10 @@ def main() -> None:
     p.add_argument("--lr", type=float, default=1e-3)
     p.add_argument("--gamma", type=float, default=2.0)
     p.add_argument("--patience", type=int, default=4)
-    p.add_argument("--workers", type=int, default=4, help="воркеры DataLoader")
+    # 0 по умолчанию: multiprocess-загрузка на Windows/venv давала дубль главного
+    # процесса (spawn re-exec) — два обучения параллельно. Однопоточный путь
+    # оптимизирован (вьюхи окон, предпосчёт масок).
+    p.add_argument("--workers", type=int, default=0, help="воркеры DataLoader")
     p.add_argument("--balanced", action="store_true", default=True,
                    help="class-balanced sampling (по умолчанию вкл)")
     p.add_argument("--no-balanced", dest="balanced", action="store_false")

@@ -75,6 +75,8 @@ class FlowWindowDataset(Dataset):
             raise ValueError("min_context должен быть в [1, window]")
         self.window = window
         self.n_features = len(feature_cols)
+        # маски на каждое число левого паддинга (0..window-1) — считаем один раз
+        self._masks = [np.arange(window) >= p for p in range(window)]
 
         # Потоки храним по группам (src_ip), отсортированными по event-time.
         self._group_feats: list[np.ndarray] = []
@@ -101,14 +103,17 @@ class FlowWindowDataset(Dataset):
         gi, end = self._index[i]
         feats = self._group_feats[gi]
         start = max(0, end - self.window + 1)
-        chunk = feats[start : end + 1]
-        pad = self.window - len(chunk)
+        real = feats[start : end + 1]
+        pad = self.window - len(real)
         if pad:
-            chunk = np.vstack([np.zeros((pad, self.n_features), np.float32), chunk])
-        mask = np.arange(self.window) >= pad
+            chunk = np.zeros((self.window, self.n_features), np.float32)
+            chunk[pad:] = real
+        else:
+            chunk = real  # полное окно — без копирования (частый случай)
+        mask = self._masks[pad]
         label = int(self._group_labels[gi][end])
         return (
-            torch.from_numpy(chunk),
+            torch.from_numpy(np.ascontiguousarray(chunk)),
             torch.from_numpy(mask),
             torch.tensor(label, dtype=torch.long),
         )
