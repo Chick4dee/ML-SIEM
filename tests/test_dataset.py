@@ -63,6 +63,18 @@ def test_getitem_shapes_and_mask_dtype():
     assert label.dtype.__str__() == "torch.int64"
 
 
+def test_window_labels_match_getitem():
+    df = _df([("10.0.0.1", t, float(t), float(t) / 10, "benign") for t in range(100, 600, 100)]
+             + [("10.0.0.2", 50, 1.0, 0.1, "worms")])
+    enc = LabelEncoder.fit(df["canonical"])
+    ds = FlowWindowDataset(df, ["f1", "f2"], enc, window=4)
+
+    assert len(ds.window_labels) == len(ds)
+    # метка из window_labels совпадает с меткой из __getitem__ для каждого окна
+    for i in range(len(ds)):
+        assert int(ds[i][2]) == int(ds.window_labels[i])
+
+
 def test_min_context_validation():
     df = _df([("10.0.0.1", 100, 1.0, 0.1, "benign")])
     enc = LabelEncoder.fit(df["canonical"])

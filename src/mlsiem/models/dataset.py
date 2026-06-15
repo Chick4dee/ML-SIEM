@@ -80,6 +80,7 @@ class FlowWindowDataset(Dataset):
         self._group_feats: list[np.ndarray] = []
         self._group_labels: list[np.ndarray] = []
         self._index: list[tuple[int, int]] = []  # (group_idx, end_pos)
+        win_labels: list[int] = []                # метка каждого окна (= метка end)
 
         for _, g in df.group_by(group_col):
             g = g.sort(time_col)
@@ -90,6 +91,8 @@ class FlowWindowDataset(Dataset):
             self._group_labels.append(labels)
             for end in range(min_context - 1, len(g), stride):
                 self._index.append((gi, end))
+                win_labels.append(int(labels[end]))
+        self.window_labels = np.asarray(win_labels, dtype=np.int64)
 
     def __len__(self) -> int:
         return len(self._index)

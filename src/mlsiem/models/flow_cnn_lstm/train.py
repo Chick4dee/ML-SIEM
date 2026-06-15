@@ -12,8 +12,9 @@ import math
 from pathlib import Path
 
 import mlflow
+import numpy as np
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, WeightedRandomSampler
 from torchmetrics.classification import MulticlassAveragePrecision
 
 from mlsiem.mlops.tracking import setup_tracking
@@ -56,14 +57,30 @@ def train(args) -> None:
     )
     model = FlowCNNLSTM(cfg).to(device)
 
-    alpha = inverse_frequency_alpha(data.class_counts).to(device)
-    criterion = FocalLoss(gamma=args.gamma, alpha=alpha)
+    # Балансировка дисбаланса: либо сэмплер (мягкий, ∝1/√частота на КЛАСС), либо
+    # веса в focal (alpha). Вместе пересолят редкие классы, поэтому при balanced
+    # alpha выключаем — балансом занимается сэмплер.
+    if args.balanced:
+        labels = data.train.window_labels
+        class_w = 1.0 / np.sqrt(np.bincount(labels, minlength=len(data.encoder)).clip(min=1))
+        sample_w = class_w[labels]
+        sampler = WeightedRandomSampler(sample_w, num_samples=len(labels), replacement=True)
+        criterion = FocalLoss(gamma=args.gamma, alpha=None)
+        train_loader = DataLoader(data.train, batch_size=args.batch, sampler=sampler,
+                                  num_workers=args.workers, pin_memory=True,
+                                  persistent_workers=args.workers > 0, drop_last=True)
+    else:
+        alpha = inverse_frequency_alpha(data.class_counts).to(device)
+        criterion = FocalLoss(gamma=args.gamma, alpha=alpha)
+        train_loader = DataLoader(data.train, batch_size=args.batch, shuffle=True,
+                                  num_workers=args.workers, pin_memory=True,
+                                  persistent_workers=args.workers > 0, drop_last=True)
+
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
     scaler = torch.amp.GradScaler(enabled=device.type == "cuda")
-
-    train_loader = DataLoader(data.train, batch_size=args.batch, shuffle=True,
-                              num_workers=0, drop_last=True)
-    val_loader = DataLoader(data.val, batch_size=args.batch, shuffle=False)
+    val_loader = DataLoader(data.val, batch_size=args.batch, shuffle=False,
+                            num_workers=args.workers, pin_memory=True,
+                            persistent_workers=args.workers > 0)
 
     setup_tracking()
     out_dir = Path(args.out)
@@ -71,7 +88,7 @@ def train(args) -> None:
         mlflow.log_params({
             "n_numeric": n_numeric, "n_classes": len(data.encoder),
             "window": args.window, "batch": args.batch, "lr": args.lr,
-            "gamma": args.gamma, "epochs": args.epochs,
+            "gamma": args.gamma, "epochs": args.epochs, "balanced": args.balanced,
             "train_windows": len(data.train), "val_windows": len(data.val),
         })
         save_artifacts(data, out_dir)
@@ -126,6 +143,10 @@ def main() -> None:
     p.add_argument("--lr", type=float, default=1e-3)
     p.add_argument("--gamma", type=float, default=2.0)
     p.add_argument("--patience", type=int, default=4)
+    p.add_argument("--workers", type=int, default=4, help="воркеры DataLoader")
+    p.add_argument("--balanced", action="store_true", default=True,
+                   help="class-balanced sampling (по умолчанию вкл)")
+    p.add_argument("--no-balanced", dest="balanced", action="store_false")
     train(p.parse_args())
 
 
