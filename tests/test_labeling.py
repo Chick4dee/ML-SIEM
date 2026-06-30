@@ -2,7 +2,7 @@
 
 import polars as pl
 
-from mlsiem.features.labeling import label_flows, load_binetflow
+from mlsiem.data.labeling import label_flows, load_binetflow
 
 BINETFLOW_HEADER = "StartTime,Dur,Proto,SrcAddr,Sport,Dir,DstAddr,Dport,State,sTos,dTos,TotPkts,TotBytes,SrcBytes,Label"  # noqa: E501
 

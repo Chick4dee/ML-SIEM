@@ -3,7 +3,7 @@
 import polars as pl
 import pytest
 
-from mlsiem.features.windowing import build_windows
+from mlsiem.data.windowing import build_windows
 
 
 def _df(rows: list[tuple[str, int, float]]) -> pl.DataFrame:

@@ -2,7 +2,7 @@
 
 import polars as pl
 
-from mlsiem.features.csic import _block_to_text, _blocks, load_csic, parse_file
+from mlsiem.data.sources.csic import _block_to_text, _blocks, load_csic, parse_file
 
 
 def test_blocks_split_on_request_line():

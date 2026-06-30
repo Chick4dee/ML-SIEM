@@ -2,7 +2,7 @@
 
 import torch
 
-from mlsiem.models.flow_cnn_lstm.model import FlowCNNLSTM, FlowModelConfig
+from mlsiem.experts.flow import FlowCNNLSTM, FlowModelConfig
 
 
 def _cfg(n_numeric=4, n_classes=3):

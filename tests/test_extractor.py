@@ -6,7 +6,7 @@ import pytest
 
 pytest.importorskip("nfstream", reason="нужен extras [capture] (+ Npcap на Windows)")
 
-from mlsiem.features.extractor import extract_flows, extract_to_parquet  # noqa: E402
+from mlsiem.data.extractor import extract_flows, extract_to_parquet  # noqa: E402
 
 FIXTURE = Path(__file__).parent / "fixtures" / "google_ssl.pcap"
 

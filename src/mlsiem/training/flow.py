@@ -1,10 +1,10 @@
 """Обучение Эксперта 1 (Flow CNN+LSTM) на UNSW-NB15 с трекингом в MLflow.
 
 Запуск (полное обучение):
-    python -m mlsiem.models.flow_cnn_lstm.train --data "data/processed/unsw/*.parquet"
+    python -m mlsiem.training.flow --data "data/processed/unsw/*.parquet"
 
 Быстрый smoke (несколько файлов, 2 эпохи):
-    python -m mlsiem.models.flow_cnn_lstm.train --data "data/processed/unsw/17-2-2015__1.parquet" --epochs 2
+    python -m mlsiem.training.flow --data "data/processed/unsw/17-2-2015__1.parquet" --epochs 2
 """  # noqa: E501
 
 import argparse
@@ -17,10 +17,10 @@ import torch
 from torch.utils.data import DataLoader, WeightedRandomSampler
 from torchmetrics.classification import MulticlassAveragePrecision
 
+from mlsiem.experts.data_builder import build_datasets, save_artifacts
+from mlsiem.experts.flow import FlowCNNLSTM, FlowModelConfig
+from mlsiem.experts.losses import FocalLoss, inverse_frequency_alpha
 from mlsiem.mlops.tracking import setup_tracking
-from mlsiem.models.data_builder import build_datasets, save_artifacts
-from mlsiem.models.flow_cnn_lstm.model import FlowCNNLSTM, FlowModelConfig
-from mlsiem.models.losses import FocalLoss, inverse_frequency_alpha
 
 
 def _emb_dim(card: int) -> int:

@@ -4,8 +4,8 @@ import numpy as np
 import polars as pl
 import pytest
 
-from mlsiem.features.windowing import build_windows
-from mlsiem.models.dataset import FlowWindowDataset, LabelEncoder
+from mlsiem.data.windowing import build_windows
+from mlsiem.experts.windows_dataset import FlowWindowDataset, LabelEncoder
 
 
 def _df(rows: list[tuple]) -> pl.DataFrame:

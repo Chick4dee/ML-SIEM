@@ -2,7 +2,7 @@
 
 import torch
 
-from mlsiem.models.autoencoder.model import (
+from mlsiem.experts.autoencoder import (
     AEConfig,
     Conv1DAutoencoder,
     reconstruction_error,

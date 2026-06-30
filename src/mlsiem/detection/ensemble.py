@@ -13,10 +13,10 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from mlsiem.features.preprocessing import FeaturePreprocessor
-from mlsiem.models.autoencoder.model import AEConfig, Conv1DAutoencoder, reconstruction_error
-from mlsiem.models.dataset import LabelEncoder
-from mlsiem.models.flow_cnn_lstm.model import FlowCNNLSTM, FlowModelConfig
+from mlsiem.data.preprocessing import FeaturePreprocessor
+from mlsiem.experts.autoencoder import AEConfig, Conv1DAutoencoder, reconstruction_error
+from mlsiem.experts.flow import FlowCNNLSTM, FlowModelConfig
+from mlsiem.experts.windows_dataset import LabelEncoder
 
 
 def _emb_dim(card: int) -> int:

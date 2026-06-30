@@ -11,8 +11,8 @@ from pathlib import Path
 
 import polars as pl
 
-from mlsiem.features.preprocessing import FeaturePreprocessor, time_split
-from mlsiem.models.dataset import FlowWindowDataset, LabelEncoder
+from mlsiem.data.preprocessing import FeaturePreprocessor, time_split
+from mlsiem.experts.windows_dataset import FlowWindowDataset, LabelEncoder
 
 _META_COLS = ("src_ip", "bidirectional_first_seen_ms", "canonical")
 

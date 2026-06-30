@@ -2,7 +2,7 @@
 
 import pytest
 
-from mlsiem.features.ctu13 import discover_scenarios
+from mlsiem.data.sources.ctu13 import discover_scenarios
 
 
 def _make_scenario(root, name: str, pcaps: int = 1, gts: int = 1):

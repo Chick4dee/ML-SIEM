@@ -1,7 +1,7 @@
 """Обучение Эксперта 4 (Conv1D AE) на benign + калибровка порога по FPR.
 
 Запуск:
-    python -m mlsiem.models.autoencoder.train --data "data/processed/unsw/*.parquet"
+    python -m mlsiem.training.autoencoder --data "data/processed/unsw/*.parquet"
 
 AE учится ТОЛЬКО на benign-окнах. Порог берём по целевому FPR на benign-val
 (НЕ «70-й перцентиль» — это давало ~30% ложных в v1). Оценка: насколько
@@ -22,9 +22,9 @@ import torch
 from sklearn.metrics import average_precision_score, roc_auc_score
 from torch.utils.data import DataLoader, Subset
 
+from mlsiem.experts.autoencoder import AEConfig, Conv1DAutoencoder, reconstruction_error
+from mlsiem.experts.data_builder import build_datasets, save_artifacts
 from mlsiem.mlops.tracking import setup_tracking
-from mlsiem.models.autoencoder.model import AEConfig, Conv1DAutoencoder, reconstruction_error
-from mlsiem.models.data_builder import build_datasets, save_artifacts
 
 
 def _recon_errors(model, loader, device) -> tuple[np.ndarray, np.ndarray]:

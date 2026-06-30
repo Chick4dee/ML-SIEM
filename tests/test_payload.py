@@ -2,7 +2,7 @@
 
 import torch
 
-from mlsiem.models.payload.model import (
+from mlsiem.experts.payload import (
     PAD_IDX,
     UNK_IDX,
     CharCNN,

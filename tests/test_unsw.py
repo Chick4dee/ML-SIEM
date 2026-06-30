@@ -2,8 +2,8 @@
 
 import polars as pl
 
-from mlsiem.features.labeling import label_flows
-from mlsiem.features.unsw import add_canonical, load_unsw_gt
+from mlsiem.data.labeling import label_flows
+from mlsiem.data.sources.unsw import add_canonical, load_unsw_gt
 
 GT_HEADER = ("Start time,Last time,Attack category,Attack subcategory,Protocol,"
              "Source IP,Source Port,Destination IP,Destination Port,Attack Name,"

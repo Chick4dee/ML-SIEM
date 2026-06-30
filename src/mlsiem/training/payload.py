@@ -1,7 +1,7 @@
 """Обучение Эксперта 3 (char-CNN) на CSIC 2010.
 
 Запуск:
-    python -m mlsiem.models.payload.train --data "A:/datasets/CSIC-2010"
+    python -m mlsiem.training.payload --data "A:/datasets/CSIC-2010"
 
 CSIC сбалансирован (normal 72k / anomalous 25k) — обычная бинарная классификация
 содержимого запроса. Метрики: PR-AUC/recall/precision по классу атаки.
@@ -16,11 +16,11 @@ import torch
 from sklearn.metrics import average_precision_score, precision_score, recall_score
 from torch.utils.data import DataLoader
 
-from mlsiem.features.csic import load_csic
+from mlsiem.data.sources.csic import load_csic
+from mlsiem.experts.payload import CharCNN, CharCNNConfig, CharTokenizer
+from mlsiem.experts.payload_dataset import PayloadDataset
+from mlsiem.experts.windows_dataset import LabelEncoder
 from mlsiem.mlops.tracking import setup_tracking
-from mlsiem.models.dataset import LabelEncoder
-from mlsiem.models.payload.dataset import PayloadDataset
-from mlsiem.models.payload.model import CharCNN, CharCNNConfig, CharTokenizer
 
 
 def _split(df, val_frac, seed):

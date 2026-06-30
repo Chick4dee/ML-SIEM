@@ -16,9 +16,9 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-from mlsiem.detection.experts import ExpertEnsemble
+from mlsiem.detection.ensemble import ExpertEnsemble
 from mlsiem.detection.meta import BENIGN, combine_verdicts_batch
-from mlsiem.models.data_builder import build_datasets
+from mlsiem.experts.data_builder import build_datasets
 
 
 def _collect(ensemble: ExpertEnsemble, loader) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

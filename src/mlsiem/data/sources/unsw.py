@@ -11,7 +11,7 @@
 
 Запуск:
 
-    python -m mlsiem.features.unsw --dataset "A:/datasets/UNSW-NB15/OneDrive_2_12.06.2026" ^
+    python -m mlsiem.data.sources.unsw --dataset "A:/datasets/UNSW-NB15/OneDrive_2_12.06.2026" ^
         --output data/processed/unsw
 """
 
@@ -20,9 +20,9 @@ from pathlib import Path
 
 import polars as pl
 
-from mlsiem.features.extractor import extract_flows
-from mlsiem.features.labeling import _GT_COLS, _PROTO_NUMBERS, label_flows
-from mlsiem.features.taxonomy import to_canonical
+from mlsiem.data.extractor import extract_flows
+from mlsiem.data.labeling import _GT_COLS, _PROTO_NUMBERS, label_flows
+from mlsiem.data.taxonomy import to_canonical
 
 GT_FILENAME = "CSV Files/NUSW-NB15_GT.csv"
 PCAP_GLOB = "pcap files/pcaps */*.pcap"

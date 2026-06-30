@@ -19,7 +19,7 @@ import polars as pl
 import torch
 from torch.utils.data import Dataset
 
-from mlsiem.features.windowing import DEFAULT_STRIDE, DEFAULT_WINDOW
+from mlsiem.data.windowing import DEFAULT_STRIDE, DEFAULT_WINDOW
 
 
 class LabelEncoder:

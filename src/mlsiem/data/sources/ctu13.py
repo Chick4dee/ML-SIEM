@@ -2,7 +2,7 @@
 
 Запуск (из корня репозитория, в venv):
 
-    python -m mlsiem.features.ctu13 --dataset A:/datasets/CTU-13/CTU-13-Dataset ^
+    python -m mlsiem.data.sources.ctu13 --dataset A:/datasets/CTU-13/CTU-13-Dataset ^
         --output data/processed/ctu13
 
 Каждый сценарий: переэкстракция nfstream → перенос меток из .binetflow →
@@ -15,8 +15,8 @@ from pathlib import Path
 
 import polars as pl
 
-from mlsiem.features.extractor import extract_flows
-from mlsiem.features.labeling import label_flows, load_binetflow
+from mlsiem.data.extractor import extract_flows
+from mlsiem.data.labeling import label_flows, load_binetflow
 
 
 @dataclass

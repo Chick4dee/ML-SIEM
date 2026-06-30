@@ -2,7 +2,7 @@
 
 import torch
 
-from mlsiem.models.losses import FocalLoss, inverse_frequency_alpha
+from mlsiem.experts.losses import FocalLoss, inverse_frequency_alpha
 
 
 def test_focal_reduces_to_ce_when_gamma_zero():

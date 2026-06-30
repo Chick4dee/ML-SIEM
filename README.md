@@ -25,30 +25,78 @@ Windows-жертвы, GHOSTS как benign-фон), SIEM — наблюдате�
 
 ## Статус
 
-🚧 **Фаза 0 из 22** — каркас, окружение, проверка GPU/CUDA, smoke-тесты ключевых зависимостей.
+🚧 **Фазы 0–6 пройдены** (Э2/Temporal отложен): данные, 3 эксперта (Flow + AE +
+Payload), мета-слой, MVP-детект. Подробности — [docs/JOURNAL.md](docs/JOURNAL.md).
 
 Полный план проекта (архитектура, данные, риски, дорожная карта, журнал решений):
-[docs/PLAN.md](docs/PLAN.md).
+[docs/PLAN.md](docs/PLAN.md); карта покрытия «класс → эксперт» — [docs/COVERAGE.md](docs/COVERAGE.md).
 
-## Структура
+## Структура `src/mlsiem/`
 
 ```
-src/mlsiem/      ingestion, features, models (5 экспертов + meta), detection, response, api, storage
-ui/              React + TypeScript SOC-консоль
-mlops/           MLflow, ONNX-экспорт
-infra/           docker-compose, Prometheus, Grafana, OpenSearch
-tests/           pytest
-docs/            PLAN.md
-data/            датасеты (DVC, в git не входят)
+data/            пайплайн данных: PCAP → фичи → окна
+  extractor.py     PCAP → потоки (nfstream)
+  windowing.py     потоки → маскированные окна
+  preprocessing.py нормализация/кодирование фич
+  labeling.py      перенос ground-truth меток
+  taxonomy.py      единый словарь классов
+  sources/         разбор датасетов: ctu13.py, unsw.py, csic.py
+experts/         архитектуры моделей + общие части
+  flow.py          Эксперт 1 (Flow CNN+LSTM)
+  autoencoder.py   Эксперт 4 (Conv1D AE)
+  payload.py       Эксперт 3 (char-CNN)
+  windows_dataset.py / payload_dataset.py  torch-датасеты
+  losses.py        focal loss
+  data_builder.py  сборка train/val
+detection/       объединение экспертов в вердикт
+  meta.py          правила {class, severity, confidence}
+  ensemble.py      загрузка + инференс экспертов
+  evaluate.py      оценка MVP-детекта
+training/        ⮕ ВСЁ, что запускается для обучения
+  flow.py  autoencoder.py  payload.py
+mlops/           tracking.py (MLflow), plot_runs.py (графики)
+ingestion/ storage/ api/ response/   — под будущие фазы
 ```
 
-## Запуск (фаза 0)
+## Установка
 
 ```powershell
 py -3.11 -m venv .venv
 .venv\Scripts\Activate.ps1
-pip install -e .[dev]
+pip install -e .[dev,ml,capture]
+# torch под CUDA отдельно (Windows):
+pip install torch --index-url https://download.pytorch.org/whl/cu126
 pytest
+```
+
+## Запуск обучения
+
+```powershell
+# Эксперт 1 (Flow) на UNSW
+python -m mlsiem.training.flow --data "data/processed/unsw/*.parquet" --epochs 25
+
+# Эксперт 4 (Autoencoder) на benign UNSW
+python -m mlsiem.training.autoencoder --data "data/processed/unsw/*.parquet"
+
+# Эксперт 3 (Payload) на CSIC
+python -m mlsiem.training.payload --data "A:/datasets/CSIC-2010"
+
+# Оценка MVP-детекта (мета Flow+AE)
+python -m mlsiem.detection.evaluate --data "data/processed/unsw/*.parquet"
+
+# Графики обучения из MLflow → docs/figures/
+python -m mlsiem.mlops.plot_runs
+```
+
+Метрики прогонов — в MLflow: `mlflow ui --backend-store-uri sqlite:///mlflow.db`.
+
+## Подготовка данных (из сырых PCAP)
+
+```powershell
+# CTU-13: все сценарии → размеченные parquet
+python -m mlsiem.data.sources.ctu13 --dataset "A:/datasets/CTU-13/CTU-13-Dataset" --output data/processed/ctu13
+# UNSW-NB15: все pcap → размеченные parquet
+python -m mlsiem.data.sources.unsw --dataset "A:/datasets/UNSW-NB15/OneDrive_2_12.06.2026" --output data/processed/unsw
 ```
 
 ## Данные (DVC)

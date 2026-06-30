@@ -438,3 +438,18 @@ TLS на полигоне). Char-level должен обобщаться луч�
   worms 0.01)
 - `ae_training.png` — Э4: сходимость recon (train/val benign)
 - `payload_training.png` — Э3: PR-AUC/recall/precision по эпохам
+
+## 2026-06-15 — Реструктуризация пакета src/mlsiem/
+
+Структура приведена к понятным папкам по назначению (было: `models/` смешивал
+папки-эксперты и общие файлы россыпью; train-скрипты разбросаны; пустые
+заглушки). Стало:
+- `data/` (было `features/`) — пайплайн данных; `data/sources/` — разбор
+  датасетов (ctu13/unsw/csic).
+- `experts/` — архитектуры моделей плоскими файлами (flow/autoencoder/payload) +
+  общие (windows_dataset, payload_dataset, losses, data_builder).
+- `detection/` — meta + ensemble (был experts.py) + evaluate (был evaluate_mvp.py).
+- `training/` — ВСЕ запускаемые train-скрипты в одном месте (flow/autoencoder/payload).
+- Удалены пустые заглушки (models/temporal, models/meta, корневой mlops/).
+Файлы перемещены через `git mv` (история сохранена), импорты обновлены,
+71 тест зелёный. Команды запуска — в README.

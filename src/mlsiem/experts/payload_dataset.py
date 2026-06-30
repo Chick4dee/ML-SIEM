@@ -4,8 +4,8 @@ import polars as pl
 import torch
 from torch.utils.data import Dataset
 
-from mlsiem.models.dataset import LabelEncoder
-from mlsiem.models.payload.model import CharTokenizer
+from mlsiem.experts.payload import CharTokenizer
+from mlsiem.experts.windows_dataset import LabelEncoder
 
 
 class PayloadDataset(Dataset):

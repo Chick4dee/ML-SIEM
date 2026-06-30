@@ -4,7 +4,7 @@ import numpy as np
 import polars as pl
 import pytest
 
-from mlsiem.features.preprocessing import (
+from mlsiem.data.preprocessing import (
     CATEGORICAL,
     EXCLUDED,
     FeaturePreprocessor,

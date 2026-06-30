@@ -2,7 +2,7 @@
 
 import pytest
 
-from mlsiem.features.taxonomy import CANONICAL, to_canonical
+from mlsiem.data.taxonomy import CANONICAL, to_canonical
 
 
 def test_unsw_dirty_labels_normalized():
